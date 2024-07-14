@@ -10,34 +10,35 @@ Parameters:
     NoEcho: true
   TelegramIPsWhitelist:
     Type: CommaDelimitedList
-    Description: Comma separate list of IPs of permitted senders commands message, leave empty to disable whitelist.
-    Default: "149.154.160.0/20,91.108.4.0/22"
+    Description: Comma separate list of IPs of permitted senders commands message,
+      leave empty to disable whitelist.
+    Default: 149.154.160.0/20,91.108.4.0/22
   TelegramApiEndpoint:
     Type: String
-    Description: "Telegram API endpoint"
-    Default: "https://api.telegram.org"
+    Description: Telegram API endpoint
+    Default: https://api.telegram.org
   UsernameWhitelist:
     Type: CommaDelimitedList
-    Description: "Telegram allowed usernames, separated by comma"
+    Description: Telegram allowed usernames, separated by comma
   MessageModelId:
     Type: String
-    Description: "Model identifier"
-    Default: "anthropic.claude-3-sonnet-20240229-v1:0"
+    Description: Model identifier
+    Default: anthropic.claude-3-sonnet-20240229-v1:0
   CompletionModelId:
     Type: String
-    Description: "Model identifier"
-    Default: "anthropic.claude-instant-v1"
+    Description: Model identifier
+    Default: anthropic.claude-instant-v1
   SystemPrompt:
     Type: String
-    Description: "Model instruction about how to respond to incoming messages"
-    Default: "Your name is Bedrock, you are a chatbot"
+    Description: Model instruction about how to respond to incoming messages
+    Default: Your name is Bedrock, you are a chatbot
   MaxTokens:
     Type: Number
-    Description: "Maximum number of tokens to generate"
+    Description: Maximum number of tokens to generate
     Default: 100
   MaxHistoryLength:
     Type: Number
-    Description: "Maximum number of message to store in history"
+    Description: Maximum number of message to store in history
     Default: 10
 
 Globals:
@@ -47,7 +48,7 @@ Globals:
     CodeUri: src/
 
 Resources:
-      
+
   ##
   # EventBus
   ##
@@ -73,7 +74,7 @@ Resources:
             Principal:
               Service:
                 - events.amazonaws.com
-      Path: '/service-role/'
+      Path: /service-role/
       Policies:
         - PolicyName: eventbridge-api-destinations
           PolicyDocument:
@@ -82,7 +83,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - events:InvokeApiDestination
-                Resource: 
+                Resource:
                   - !GetAtt BotApiDestination.Arn
 
   WebhookEventBridgeRole:
@@ -93,11 +94,11 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
             Principal:
               Service:
                 - apigateway.amazonaws.com
-      Path: '/service-role/'
+      Path: /service-role/
       Policies:
         - PolicyName: api-gateway-eventbridge
           PolicyDocument:
@@ -105,7 +106,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'events:PutEvents'
+                  - events:PutEvents
                 Resource:
                   - !GetAtt EventBus.Arn
 
@@ -125,10 +126,10 @@ Resources:
   BotApiDestination:
     Type: AWS::Events::ApiDestination
     Properties:
-      Name: !Sub "${AWS::StackName}"
+      Name: !Sub ${AWS::StackName}
       ConnectionArn: !GetAtt BotApiConnection.Arn
       HttpMethod: POST
-      InvocationEndpoint: !Sub "${TelegramApiEndpoint}/bot${TelegramBotToken}/*"
+      InvocationEndpoint: !Sub ${TelegramApiEndpoint}/bot${TelegramBotToken}/*
       InvocationRateLimitPerSecond: 10
 
   ##
@@ -141,17 +142,18 @@ Resources:
       State: ENABLED
       EventBusName: !Ref EventBus
       EventPattern:
-        detail-type: ['Set Webhook']
+        detail-type:
+          - Set Webhook
       Targets:
         - Id: telegram-destination
           Arn: !GetAtt BotApiDestination.Arn
           RoleArn: !GetAtt EventsApiDestinationRole.Arn
           HttpParameters:
             PathParameterValues:
-              - 'setWebhook'
+              - setWebhook
           InputTransformer:
             InputPathsMap:
-              "url": "$.detail.url"
+              url: $.detail.url
             InputTemplate: |
               {
                 "url": "<url>"
@@ -163,18 +165,19 @@ Resources:
       State: ENABLED
       EventBusName: !Ref EventBus
       EventPattern:
-        detail-type: ['Send Message']
+        detail-type:
+          - Send Message
       Targets:
         - Id: telegram-destination
           Arn: !GetAtt BotApiDestination.Arn
           RoleArn: !GetAtt EventsApiDestinationRole.Arn
           HttpParameters:
             PathParameterValues:
-              - 'sendMessage'
+              - sendMessage
           InputTransformer:
             InputPathsMap:
-              "chat_id": "$.detail.chat_id"
-              "text": "$.detail.text"
+              chat_id: $.detail.chat_id
+              text: $.detail.text
             InputTemplate: |
               {
                 "chat_id": "<chat_id>",
@@ -188,18 +191,19 @@ Resources:
       State: ENABLED
       EventBusName: !Ref EventBus
       EventPattern:
-        detail-type: ['Send Chat Action']
+        detail-type:
+          - Send Chat Action
       Targets:
         - Id: telegram-destination
           Arn: !GetAtt BotApiDestination.Arn
           RoleArn: !GetAtt EventsApiDestinationRole.Arn
           HttpParameters:
             PathParameterValues:
-              - 'sendChatAction'
+              - sendChatAction
           InputTransformer:
             InputPathsMap:
-              "chat_id": "$.detail.chat_id"
-              "action": "$.detail.action"
+              chat_id: $.detail.chat_id
+              action: $.detail.action
             InputTemplate: |
               {
                 "chat_id": "<chat_id>",
@@ -211,16 +215,16 @@ Resources:
   ##
 
   WebhookApiRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
-              Service: "apigateway.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
+              Service: apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Policies:
         - PolicyName: ApiDirectWriteEventBridge
           PolicyDocument:
@@ -243,34 +247,34 @@ Resources:
       GatewayResponses:
         DEFAULT_4xx:
           StatusCode: 403
-          ResponseTemplates: 
-            "text/plain": "Forbidden"
+          ResponseTemplates:
+            text/plain: Forbidden
         DEFAULT_5xx:
           StatusCode: 500
           ResponseTemplates:
-            "text/plain": "Internal Server Error"
+            text/plain: Internal Server Error
       DefinitionBody:
-        swagger: 2.0
+        swagger: 2
         info:
-          title: "Telegram Bot Webhook"
+          title: Telegram Bot Webhook
         schemes:
-          - "https"
+          - https
         paths:
           /:
             post:
               consumes:
-                - "application/json"
+                - application/json
               produces:
-                - "application/json"
+                - application/json
               responses:
-                "200":
-                  description: "200 response"
+                '200':
+                  description: 200 response
               x-amazon-apigateway-integration:
-                type: "aws"
-                httpMethod: "POST"
-                uri: !Sub "arn:aws:apigateway:${AWS::Region}:events:action/PutEvents"
+                type: aws
+                httpMethod: POST
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:events:action/PutEvents
                 requestTemplates:
-                  application/json: !Sub | 
+                  application/json: !Sub |
                     #set($context.requestOverride.header.X-Amz-Target = "AWSEvents.PutEvents")
                     #set($context.requestOverride.header.Content-Type = "application/x-amz-json-1.1")
                     {
@@ -283,11 +287,11 @@ Resources:
                     }
                 responses:
                   default:
-                    statusCode: "200"
+                    statusCode: '200'
                     responseTemplates:
-                      "application/json": "{}"
+                      application/json: '{}'
                 credentials: !GetAtt WebhookApiRole.Arn
-                passthroughBehavior: "when_no_templates"
+                passthroughBehavior: when_no_templates
 
   ##
   # Database
@@ -296,7 +300,7 @@ Resources:
   ChatHistoryBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-chats" 
+      BucketName: !Sub ${AWS::StackName}-chats
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         IgnorePublicAcls: true
@@ -310,7 +314,7 @@ Resources:
   BedrockIntegrationMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-message"
+      FunctionName: !Sub ${AWS::StackName}-message
       Handler: message.handler
       MemorySize: 512
       Timeout: 15
@@ -327,14 +331,14 @@ Resources:
         - S3CrudPolicy:
             BucketName: !Ref ChatHistoryBucket
         - Statement:
-          - Effect: "Allow"
-            Action: "bedrock:InvokeModel"
-            Resource: "*"
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: '*'
 
   BedrockIntegrationCompletionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-completion"
+      FunctionName: !Sub ${AWS::StackName}-completion
       Handler: completion.handler
       Timeout: 5
       Environment:
@@ -344,14 +348,14 @@ Resources:
           MAX_TOKENS: !Ref MaxTokens
       Policies:
         - Statement:
-          - Effect: "Allow"
-            Action: "bedrock:InvokeModel"
-            Resource: "*"
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: '*'
 
   BedrockIntegrationSummarizationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-summarization"
+      FunctionName: !Sub ${AWS::StackName}-summarization
       Handler: summarization.handler
       Timeout: 30
       Environment:
@@ -365,15 +369,14 @@ Resources:
         - S3CrudPolicy:
             BucketName: !Ref ChatHistoryBucket
         - Statement:
-          - Effect: "Allow"
-            Action: "bedrock:InvokeModel"
-            Resource: "*"
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: '*'
 
   MessageReceivedStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub "${AWS::StackName}-message"
-      DefinitionUri: states/message.asl.yaml
+      Name: !Sub ${AWS::StackName}-message
       DefinitionSubstitutions:
         EventBusName: !Ref EventBus
         EventSource: !Ref AWS::StackName
@@ -398,11 +401,12 @@ Resources:
               source:
                 - !Ref AWS::StackName
               detail-type:
-                - 'Webhook Event Received'
+                - Webhook Event Received
               detail:
                 message:
                   from:
                     username: !Ref UsernameWhitelist
+      DefinitionUri: states/message.asl.yaml
 
   ##
   # StepFunctions for connector management
@@ -411,12 +415,11 @@ Resources:
   InstallStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub "${AWS::StackName}-install"
-      DefinitionUri: states/install.asl.yaml
+      Name: !Sub ${AWS::StackName}-install
       DefinitionSubstitutions:
         EventBusName: !Ref EventBus
         EventSource: !Ref AWS::StackName
-        WebhookEndpoint: !Sub "https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/webhook/"
+        WebhookEndpoint: !Sub https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/webhook/
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -436,3 +439,4 @@ Resources:
                 status-details:
                   status:
                     - CREATE_COMPLETE
+      DefinitionUri: states/install.asl.yaml
