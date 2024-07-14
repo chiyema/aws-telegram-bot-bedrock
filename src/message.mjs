@@ -6,6 +6,7 @@ const bedrock = new BedrockRuntimeClient()
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT
 const MESSAGE_SUFFIX = process.env.MESSAGE_SUFFIX
 const MODEL_ID = process.env.MODEL_ID
+const COST_EFFICIENT_MODEL_ID = process.env.COST_EFFICIENT_MODEL_ID
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || 'bedrock-2023-05-31'
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
 const HELP_TEXT = "The chatbot can be interacted in 3 ways. \n1. in a private chat, any message sent to the bot will be responded. \n2. in a group chat and the bot is not admin, only message that starts with /chat will be sent to the bot and responded. \n3 in a group chat and the bot is admin, every messages will be sent to the bot, but only messages that starts with /chat or @{the bot} will be respond based on the chat history";
@@ -55,6 +56,7 @@ export async function handler({ message, chat_id }) {
 	const photo = message.photo;
 	let messages = [];
 	let send = true;
+	let modelId = MODEL_ID;
 
 	if (text?.startsWith('/start') || message.group_chat_created) {
 		messages = [{
@@ -92,6 +94,7 @@ export async function handler({ message, chat_id }) {
 					messages = await aggregateMessages(chat_id, `${user}: ${text}`, photo);
 					// do not send to telegram, but continue generating response and keep as history
 					send = false;
+					modelId = COST_EFFICIENT_MODEL_ID;
 				}
 		}
 	}
@@ -111,7 +114,7 @@ export async function handler({ message, chat_id }) {
 	}
 
 	let { body, contentType, $metadata } = await bedrock.send(new InvokeModelCommand({
-		modelId: MODEL_ID,
+		modelId,
 		contentType: 'application/json',
 		accept: 'application/json',
 		body: JSON.stringify(prompt)

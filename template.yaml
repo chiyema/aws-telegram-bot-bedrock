@@ -24,6 +24,10 @@ Parameters:
     Type: String
     Description: Model identifier
     Default: anthropic.claude-3-sonnet-20240229-v1:0
+  CostEfficientMessageModelId:
+    Type: String
+    Description: Model identifier that will be used to process messages that don't need a response in group chat. 
+    Default: anthropic.claude-3-haiku-20240307-v1:0
   CompletionModelId:
     Type: String
     Description: Model identifier
@@ -329,6 +333,7 @@ Resources:
           HISTORY_BUCKET: !Ref ChatHistoryBucket
           MAX_HISTORY_LENGTH: !Ref MaxHistoryLength
           MODEL_ID: !Ref MessageModelId
+          COST_EFFICIENT_MODEL_ID: !Ref CostEfficientMessageModelId
           MAX_TOKENS: !Ref MaxTokens
           TELEGRAM_API_ENDPOINT: !Ref TelegramApiEndpoint
           TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
