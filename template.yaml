@@ -28,6 +28,10 @@ Parameters:
     Type: String
     Description: Model identifier
     Default: anthropic.claude-instant-v1
+  MessageSuffix:
+    Type: String
+    Description: Suffix will always be appended to every message.
+    Default: .
   SystemPrompt:
     Type: String
     Description: Model instruction about how to respond to incoming messages
@@ -321,6 +325,7 @@ Resources:
       Environment:
         Variables:
           SYSTEM_PROMPT: !Ref SystemPrompt
+          MESSAGE_SUFFIX: !Ref MessageSuffix
           HISTORY_BUCKET: !Ref ChatHistoryBucket
           MAX_HISTORY_LENGTH: !Ref MaxHistoryLength
           MODEL_ID: !Ref MessageModelId

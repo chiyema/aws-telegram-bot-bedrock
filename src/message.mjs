@@ -4,6 +4,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 const bedrock = new BedrockRuntimeClient()
 
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT
+const MESSAGE_SUFFIX = process.env.MESSAGE_SUFFIX
 const MODEL_ID = process.env.MODEL_ID
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || 'bedrock-2023-05-31'
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
@@ -27,14 +28,14 @@ async function aggregateMessages(chat_id, text, photo) {
 		if (text) {
 			message.content.push({
 				'type': 'text',
-				'text': text
+				'text': text + MESSAGE_SUFFIX
 			})
 		}
 		messages.push(message)
 	} else {
 		messages.push({
 			'role': 'user',
-			'content': text
+			'content': text + MESSAGE_SUFFIX
 		})
 	}
 	return messages;
