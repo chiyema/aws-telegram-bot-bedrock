@@ -54,16 +54,12 @@ export async function handler({ message, chat_id, user, lang }) {
 	let messages = [];
 	let send = true;
 
-	if (!text) {
-		return {
-			send: false,
-		}
-	} else if (text.startsWith('/start')) {
+	if (text?.startsWith('/start') || message.group_chat_created) {
 		messages = [{
 			'role': 'user',
 			'content': 'Present yourself'
 		}]
-	} else if (text.startsWith('/help')) {
+	} else if (text?.startsWith('/help')) {
 		return {
 			text: HELP_TEXT,
 			send: true,
