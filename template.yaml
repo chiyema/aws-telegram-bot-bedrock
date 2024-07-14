@@ -17,9 +17,10 @@ Parameters:
     Type: String
     Description: Telegram API endpoint
     Default: https://api.telegram.org
-  UsernameWhitelist:
-    Type: CommaDelimitedList
-    Description: Telegram allowed usernames, separated by comma
+  ChatIdWhitelist:
+    Type: List<Number>
+    Description: Telegram allowed chat id, including both private chat and group
+      chat, separated by comma
   MessageModelId:
     Type: String
     Description: Model identifier
@@ -404,9 +405,36 @@ Resources:
                 - Webhook Event Received
               detail:
                 message:
-                  from:
-                    username: !Ref UsernameWhitelist
+                  chat:
+                    id: !Ref ChatIdWhitelist
       DefinitionUri: states/message.asl.yaml
+
+  UnauthorizedMessageReceivedStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub ${AWS::StackName}-unauthorized-message
+      DefinitionSubstitutions:
+        EventBusName: !Ref EventBus
+        EventSource: !Ref AWS::StackName
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+      Events:
+        ReceivedEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBus
+            Pattern:
+              source:
+                - !Ref AWS::StackName
+              detail-type:
+                - Webhook Event Received
+              detail:
+                message:
+                  chat:
+                    id:
+                      - anything-but: !Ref ChatIdWhitelist
+      DefinitionUri: states/unauthorized.asl.yaml
 
   ##
   # StepFunctions for connector management

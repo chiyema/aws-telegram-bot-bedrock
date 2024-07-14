@@ -1,0 +1,15 @@
+StartAt: SendUnauthroizedMessage
+States:
+  SendUnauthroizedMessage:
+    Type: Task
+    Resource: 'arn:aws:states:::events:putEvents'
+    Parameters:
+      Entries:
+        - EventBusName: ${EventBusName}
+          Source: ${EventSource}
+          DetailType: Send Message
+          Detail:
+            chat_id.$: $.detail.message.chat.id
+            text: You are not authroized to access the chat bot. Contact the bot owner.
+    ResultPath: null
+    End: true
