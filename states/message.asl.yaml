@@ -51,7 +51,6 @@ States:
     Resource: "${SummarizationFunctionArn}"
     Parameters:
       chat_id.$: $.detail.message.chat.id
-      lang.$: $.detail.message.from.language_code
       text.$: $.detail.message.text
     Catch:
       - ErrorEquals:
@@ -67,7 +66,6 @@ States:
     Parameters:
       chat_id.$: $.detail.message.chat.id
       user.$: $.detail.message.from.first_name
-      lang.$: $.detail.message.from.language_code
       message.$: $.detail.message
     Catch:
       - ErrorEquals:
@@ -81,7 +79,6 @@ States:
     Type: Task
     Resource: "${CompletionFunctionArn}"
     Parameters:
-      lang.$: $.detail.message.from.language_code
       text: "Generates an concisely error message regarding the impossibility of satisfying the request"
     ResultPath: $.response
     Next: CheckForSendResponse
