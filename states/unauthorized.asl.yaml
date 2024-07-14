@@ -1,8 +1,33 @@
-StartAt: SendUnauthroizedMessage
+StartAt: CheckForChatType
 States:
+  CheckForChatType:
+    Type: Choice
+    Choices:
+      - Or:
+          - Variable: $.detail.message.chat.type
+            StringEquals: "supergroup"
+          - Variable: $.detail.message.chat.type
+            StringEquals: "group"
+        Next: CheckForSendGroupUnauthorizedMessage
+    Default: SendUnauthroizedMessage
+
+  CheckForSendGroupUnauthorizedMessage:
+    Type: Choice
+    Choices:
+      - And:
+          - Variable: $.detail.message.entities
+            IsPresent: true
+          - Or:
+              - Variable: $.detail.message.entities[0].type
+                StringEquals: "bot_command"
+              - Variable: $.detail.message.entities[0].type
+                StringEquals: "mention"
+        Next: SendUnauthroizedMessage
+    Default: PassEnd
+
   SendUnauthroizedMessage:
     Type: Task
-    Resource: 'arn:aws:states:::events:putEvents'
+    Resource: "arn:aws:states:::events:putEvents"
     Parameters:
       Entries:
         - EventBusName: ${EventBusName}
@@ -10,6 +35,11 @@ States:
           DetailType: Send Message
           Detail:
             chat_id.$: $.detail.message.chat.id
-            text: You are not authroized to access the chat bot. Contact the bot owner.
+            text.$: "States.Format('Hello {}. You are not authroized to access the chat bot yet. Please contact the bot owner.', $.detail.message.from.first_name)"
+    ResultPath: null
+    End: true
+
+  PassEnd:
+    Type: Pass
     ResultPath: null
     End: true

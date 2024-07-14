@@ -8,8 +8,10 @@ States:
             StringEquals: "supergroup"
           - Not:
               And:
-                - Variable: $.detail.message.text
+                - Variable: $.detail.message.entities
                   IsPresent: true
+                - Variable: $.detail.message.entities[0].type
+                  StringEquals: "bot_command"
                 - Variable: $.detail.message.text
                   StringMatches: "/chat *"
           - Not:
