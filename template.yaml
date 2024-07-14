@@ -17,9 +17,9 @@ Parameters:
     Type: String
     Description: Telegram API endpoint
     Default: https://api.telegram.org
-  UserIdWhitelist:
-    Type: List<Number>
-    Description: Telegram allowed user id, separated by comma
+  UsernameWhitelist:
+    Type: CommaDelimitedList
+    Description: Telegram allowed user names, separated by comma
   MessageModelId:
     Type: String
     Description: Model identifier
@@ -405,7 +405,7 @@ Resources:
               detail:
                 message:
                   from:
-                    id: !Ref UserIdWhitelist
+                    username: !Ref UsernameWhitelist
       DefinitionUri: states/message.asl.yaml
 
   UnauthorizedMessageReceivedStateMachine:
@@ -431,8 +431,10 @@ Resources:
               detail:
                 message:
                   from:
-                    id:
-                      - anything-but: !Ref UserIdWhitelist
+                    is_bot: 
+                      - false
+                    username:
+                      - anything-but: !Ref UsernameWhitelist
       DefinitionUri: states/unauthorized.asl.yaml
 
   ##
