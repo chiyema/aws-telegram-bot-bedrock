@@ -67,7 +67,6 @@ States:
     Resource: "${MessageFunctionArn}"
     Parameters:
       chat_id.$: $.detail.message.chat.id
-      user.$: $.detail.message.from.first_name
       message.$: $.detail.message
     Catch:
       - ErrorEquals:
