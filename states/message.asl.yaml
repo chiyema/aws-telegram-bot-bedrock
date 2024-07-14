@@ -7,8 +7,11 @@ States:
           - Variable: $.detail.message.chat.type
             StringEquals: "supergroup"
           - Not:
-              Variable: $.detail.message.text
-              StringMatches: "/chat *"
+              And:
+                - Variable: $.detail.message.text
+                  IsPresent: true
+                - Variable: $.detail.message.text
+                  StringMatches: "/chat *"
           - Not:
               And:
                 - Variable: $.detail.message.entities
