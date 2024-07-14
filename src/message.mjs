@@ -7,6 +7,38 @@ const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT
 const MODEL_ID = process.env.MODEL_ID
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || 'bedrock-2023-05-31'
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
+const HELP_TEXT = "The chatbot can be interacted in 3 ways. \n1. in a private chat, any message sent to the bot will be responded. \n2. in a group chat and the bot is not admin, only message that starts with /chat will be sent to the bot and responded. \n3 in a group chat and the bot is admin, every messages will be sent to the bot, but only messages that starts with /chat or @{the bot} will be respond based on the chat history";
+
+async function aggregateMessages(chat_id, text, photo) {
+	console.log('text', text);
+	let messages = await loadHistory(chat_id);
+	if (photo) {
+		const message = {
+			'role': 'user',
+			'content': [{
+				'type': 'image',
+				'source': {
+					'type': 'base64',
+					'media_type': 'image/jpeg',
+					'data': await downloadImage(photo.shift())
+				}
+			}]
+		}
+		if (text) {
+			message.content.push({
+				'type': 'text',
+				'text': text
+			})
+		}
+		messages.push(message)
+	} else {
+		messages.push({
+			'role': 'user',
+			'content': text
+		})
+	}
+	return messages;
+}
 
 /**
  * @param {object} event
@@ -16,40 +48,49 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
  * @param {number} event.chat_id
  * @param {string} event.user
  */
-export async function handler ({ message: { text, photo }, chat_id, user, lang }) {
-	let messages = []
+export async function handler({ message, chat_id, user, lang }) {
+	const text = message.text;
+	const photo = message.photo;
+	let messages = [];
+	let send = true;
 
-	if (text === '/start') {
+	if (text.startsWith('/start')) {
 		messages = [{
 			'role': 'user',
 			'content': 'Present yourself'
 		}]
+	} else if (text.startsWith('/help')) {
+		return {
+			text: HELP_TEXT,
+			send: true,
+		};
 	} else {
-		messages = await loadHistory(chat_id)
-		if (photo) {
-			const message = {
-				'role': 'user',
-				'content': [{
-					'type': 'image',
-					'source': {
-						'type': 'base64',
-						'media_type': 'image/jpeg',
-						'data': await downloadImage(photo.shift())
+		switch (message.chat.type) {
+			case 'private':
+				messages = await aggregateMessages(chat_id, text, photo);
+				break;
+			case 'group':
+				if (text?.startsWith('/chat')) {
+					messages = await aggregateMessages(chat_id, `${user}: ${text.slice(6)}`, photo);
+				} else {
+					return {
+						send: false,
 					}
-				}]
-			}
-			if (text) {
-				message.content.push({
-					'type': 'text',
-					'text': text
-				})
-			}
-			messages.push(message)
-		} else {
-			messages.push({
-				'role': 'user',
-				'content': text
-			})
+				}
+				break;
+			case 'supergroup':
+				if (message.entities?.[0].type === 'mention') {
+					const mentionOffset = message.entities[0].offset;
+					const mentionLength = message.entities[0].length + 1;
+					const revised_text = `${user}: ${text.substring(0, mentionOffset)}${text.substring(mentionOffset + mentionLength)}`;
+					messages = await aggregateMessages(chat_id, revised_text, photo);
+				} else if (text?.startsWith('/chat')) {
+					messages = await aggregateMessages(chat_id, `${user}: ${text.slice(6)}`, photo);
+				} else {
+					messages = await aggregateMessages(chat_id, `${user}: ${text}`, photo);
+					// do not send to telegram, but continue generating response and keep as history
+					send = false;
+				}
 		}
 	}
 
@@ -81,13 +122,19 @@ export async function handler ({ message: { text, photo }, chat_id, user, lang }
 	console.log('output_tokens', body.usage?.output_tokens)
 	console.log('stop_reason', body.stop_reason)
 
-	const response = body.content.reduce((acc, content) => acc + ' ' +content.text, '').trim()
-	messages.push({
-		'role': 'assistant',
-		'content': response
-	})
+	const responseText = body.content.reduce((acc, content) => acc + ' ' + content.text, '').trim()
+	if (messages.length !== 0) {
+		messages.push({
+			'role': 'assistant',
+			'content': responseText
+		})
+	}
+	console.log('messages', messages)
 
 	await saveHistory(chat_id, messages)
 
-	return response
+	return {
+		text: responseText,
+		send,
+	};
 }

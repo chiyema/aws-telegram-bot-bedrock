@@ -38,7 +38,7 @@ States:
         ResultPath: $.error
         Next: GetErrorResponse
     ResultPath: $.response
-    Next: SendResponse
+    Next: CheckForSendResponse
 
   GetResponse:
     Type: Task
@@ -54,7 +54,7 @@ States:
         ResultPath: $.error
         Next: GetErrorResponse
     ResultPath: $.response
-    Next: SendResponse
+    Next: CheckForSendResponse
 
   GetErrorResponse:
     Type: Task
@@ -63,7 +63,18 @@ States:
       lang.$: $.detail.message.from.language_code
       text: 'Generates an concisely error message regarding the impossibility of satisfying the request'
     ResultPath: $.response
-    Next: SendResponse
+    Next: CheckForSendResponse
+
+  CheckForSendResponse:
+    Type: Choice
+    Choices:
+      - Variable: $.response.send
+        BooleanEquals: false
+        Next: PassEnd
+      - Variable: $.response.send
+        BooleanEquals: true
+        Next: SendResponse
+    Default: SendResponse
   
   SendResponse:
     Type: Task
@@ -75,6 +86,11 @@ States:
           DetailType: Send Message
           Detail:
             chat_id.$: $.detail.message.chat.id
-            text.$: $.response
+            text.$: $.response.text
+    ResultPath: null
+    End: true
+
+  PassEnd:
+    Type: Pass
     ResultPath: null
     End: true

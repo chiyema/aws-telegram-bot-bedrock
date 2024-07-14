@@ -31,5 +31,8 @@ export async function handler ({ text, lang }) {
 	console.log('metadata', JSON.stringify($metadata))
 	console.log('output', contentType, JSON.stringify(body))
 
-	return body.completion.trim()
+	return {
+		send: true,
+		text: body.completion.trim()
+	}
 }

@@ -47,5 +47,8 @@ export async function handler ({ text, lang, chat_id }) {
 	
 	await saveHistory(chat_id, messages)
 
-	return summary
+	return {
+		send: true,
+		text: summary,
+	}
 }
