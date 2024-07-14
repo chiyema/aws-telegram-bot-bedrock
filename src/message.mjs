@@ -51,7 +51,10 @@ async function aggregateMessages(chat_id, text, photo) {
  * @param {string} event.user
  */
 export async function handler({ message, chat_id }) {
-	const user = `${message.from.first_name} ${message.from.last_name}` 
+	let user = message.from.first_name;
+	if (message.from.last_name) {
+		user += ` ${message.from.last_name}`
+	}
 	const text = message.text;
 	const photo = message.photo;
 	let messages = [];
