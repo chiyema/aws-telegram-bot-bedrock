@@ -1,8 +1,26 @@
-StartAt: SendTyping
+StartAt: CheckForSendTyping
 States:
+  CheckForSendTyping:
+    Type: Choice
+    Choices:
+      - And:
+          - Variable: $.detail.message.chat.type
+            StringEquals: "supergroup"
+          - Not:
+              Variable: $.detail.message.text
+              StringMatches: "/chat *"
+          - Not:
+              And:
+                - Variable: $.detail.message.entities
+                  IsPresent: true
+                - Variable: $.detail.message.entities[0].type
+                  StringEquals: "mention"
+        Next: CheckForSummarization
+    Default: SendTyping
+
   SendTyping:
     Type: Task
-    Resource: 'arn:aws:states:::events:putEvents'
+    Resource: "arn:aws:states:::events:putEvents"
     Parameters:
       Entries:
         - EventBusName: ${EventBusName}
@@ -27,7 +45,7 @@ States:
 
   GetSummary:
     Type: Task
-    Resource: '${SummarizationFunctionArn}'
+    Resource: "${SummarizationFunctionArn}"
     Parameters:
       chat_id.$: $.detail.message.chat.id
       lang.$: $.detail.message.from.language_code
@@ -42,7 +60,7 @@ States:
 
   GetResponse:
     Type: Task
-    Resource: '${MessageFunctionArn}'
+    Resource: "${MessageFunctionArn}"
     Parameters:
       chat_id.$: $.detail.message.chat.id
       user.$: $.detail.message.from.first_name
@@ -58,10 +76,10 @@ States:
 
   GetErrorResponse:
     Type: Task
-    Resource: '${CompletionFunctionArn}'
+    Resource: "${CompletionFunctionArn}"
     Parameters:
       lang.$: $.detail.message.from.language_code
-      text: 'Generates an concisely error message regarding the impossibility of satisfying the request'
+      text: "Generates an concisely error message regarding the impossibility of satisfying the request"
     ResultPath: $.response
     Next: CheckForSendResponse
 
@@ -75,10 +93,10 @@ States:
         BooleanEquals: true
         Next: SendResponse
     Default: SendResponse
-  
+
   SendResponse:
     Type: Task
-    Resource: 'arn:aws:states:::events:putEvents'
+    Resource: "arn:aws:states:::events:putEvents"
     Parameters:
       Entries:
         - EventBusName: ${EventBusName}
