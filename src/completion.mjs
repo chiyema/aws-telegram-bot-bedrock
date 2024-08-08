@@ -11,17 +11,16 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
  * @param {number} event.chat_id
  * @param {string} event.user
  */
-export async function handler ({ message, completionPrompt }) {
+export async function handler ({ message, text }) {
 	let user = message.from.first_name;
 	if (message.from.last_name) {
 		user += ` ${message.from.last_name}`
 	}
-	let text = message.text;
 
-	const userContext = `When answering use the language that user speaks. The User's name is ${user}`
+	const userContext = `When responding, use the language that human speaks. The human's name is ${user}`
 
 	const prompt = {
-		'prompt': `System:${[SYSTEM_PROMPT, userContext, completionPrompt].join('. ')}\n\nHuman:${text}\n\nAssistant:`,
+		'prompt': `System:${[userContext].join('. ')}\n\nHuman: ${text}\n\nAssistant:`,
 		'max_tokens_to_sample': MAX_TOKENS
 	}
 

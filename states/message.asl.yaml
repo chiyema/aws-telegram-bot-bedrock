@@ -81,7 +81,7 @@ States:
     Resource: "${CompletionFunctionArn}"
     Parameters:
       message.$: $.detail.message
-      completionPrompt.$: "States.Format('Generates an concisely error message regarding the impossibility of satisfying the request with error {}.', $.error)"
+      text.$: "States.Format('Generates a concisely error message regarding the impossibility of satisfying request from user \"{}\", based on the error {}. ', $.detail.message.text, $.error)"
     ResultPath: $.response
     Next: CheckForSendResponse
 
