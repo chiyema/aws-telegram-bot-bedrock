@@ -94,7 +94,7 @@ export async function handler({ message, chat_id }) {
 				} else if (text?.startsWith('/chat')) {
 					messages = await aggregateMessages(chat_id, `${user}: ${text.slice(6)}`, photo);
 				} else {
-					messages = await aggregateMessages(chat_id, `${user}: ${text}`, photo);
+					messages = await aggregateMessages(chat_id, `${user}: ${text}`, undefined);
 					// do not send to telegram, but continue generating response and keep as history
 					send = false;
 					modelId = COST_EFFICIENT_MODEL_ID;
