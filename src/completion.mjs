@@ -18,7 +18,7 @@ export async function handler ({ message, completionPrompt }) {
 	}
 	let text = message.text;
 
-	const userContext = `When answering use the language that user speaks. The User's name is ${user}`
+	const userContext = `When responding, use the language that user speaks. The User's name is ${user}`
 
 	const prompt = {
 		'prompt': `System:${[SYSTEM_PROMPT, userContext, completionPrompt].join('. ')}\n\nHuman:${text}\n\nAssistant:`,

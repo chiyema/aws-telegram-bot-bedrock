@@ -425,9 +425,12 @@ Resources:
       DefinitionSubstitutions:
         EventBusName: !Ref EventBus
         EventSource: !Ref AWS::StackName
+        CompletionFunctionArn: !GetAtt BedrockIntegrationCompletionFunction.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - LambdaInvokePolicy:
+            FunctionName: !Ref BedrockIntegrationCompletionFunction
       Events:
         ReceivedEvent:
           Type: EventBridgeRule

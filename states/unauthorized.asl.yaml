@@ -9,7 +9,7 @@ States:
           - Variable: $.detail.message.chat.type
             StringEquals: "group"
         Next: CheckForSendGroupUnauthorizedMessage
-    Default: SendUnauthroizedMessage
+    Default: GetErrorResponse
 
   CheckForSendGroupUnauthorizedMessage:
     Type: Choice
@@ -22,8 +22,17 @@ States:
                 StringEquals: "bot_command"
               - Variable: $.detail.message.entities[0].type
                 StringEquals: "mention"
-        Next: SendUnauthroizedMessage
+        Next: GetErrorResponse
     Default: PassEnd
+
+  GetErrorResponse:
+    Type: Task
+    Resource: "${CompletionFunctionArn}"
+    Parameters:
+      message.$: $.detail.message
+      completionPrompt: "Avoid answering user's question, and generates an concisely error message regarding the impossibility of satisfying the request because user is forbidden to ask any questions"
+    ResultPath: $.response
+    Next: SendUnauthroizedMessage
 
   SendUnauthroizedMessage:
     Type: Task
@@ -35,7 +44,7 @@ States:
           DetailType: Send Message
           Detail:
             chat_id.$: $.detail.message.chat.id
-            text.$: "States.Format('Hello {}. You are not authroized to access the chat bot yet. Please contact the bot owner.', $.detail.message.from.first_name)"
+            text.$: $.response.text
     ResultPath: null
     End: true
 
