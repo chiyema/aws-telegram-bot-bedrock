@@ -1,5 +1,5 @@
 import { loadHistory, saveHistory, limitHistory } from './lib/history.mjs'
-import { downloadImage } from './lib/telegram.mjs'
+import { downloadImage, extractUser, extractContent } from './lib/telegram.mjs'
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 const bedrock = new BedrockRuntimeClient()
 
@@ -71,59 +71,41 @@ function redactMessages(messages, redactImage = false) {
  * @param {string} event.user
  */
 export async function handler({ message, chat_id }) {
-	let user = message.from.first_name;
-	if (message.from.last_name) {
-		user += ` ${message.from.last_name}`
-	}
-	let text = message.text;
-	const photo = message.photo;
-	let entities = message.entities;
-	if (photo) {
-		text = message.caption;
-		entities = message.caption_entities;
-	}
-	let messages = [];
-	let send = true;
-	let modelId = MODEL_ID;
+	let user = extractUser(message);
 
-	if (text?.startsWith('/start') || message.group_chat_created) {
+	let messages = [];
+	let modelId = MODEL_ID;
+	let send = true;
+
+	const { extractedCommand, extractedText, extractedPhoto, shouldReply } = await extractContent(message);
+
+	if (extractedCommand?.startsWith('/start') || message.group_chat_created) {
 		messages = [{
 			'role': 'user',
 			'content': 'Present yourself in English'
 		}]
-	} else if (text?.startsWith('/help')) {
+		modelId = COST_EFFICIENT_MODEL_ID;
+	} else if (extractedCommand?.startsWith('/help')) {
 		return {
 			text: HELP_TEXT,
 			send: true,
 		};
+	} else if (extractedCommand?.startsWith('/chat')) {
+		messages = await aggregateMessages(chat_id, extractedText, extractedPhoto);
+	} else if (extractedCommand) {
+		return {
+			text: `Command ${extractedCommand} is not supported. Check /help`,
+			send: true,
+		};
 	} else {
-		switch (message.chat.type) {
-			case 'private':
-				messages = await aggregateMessages(chat_id, text, photo);
-				break;
-			case 'group':
-				if (text?.startsWith('/chat')) {
-					messages = await aggregateMessages(chat_id, `${user}: ${text.slice(6)}`, photo);
-				} else {
-					return {
-						send: false,
-					}
-				}
-				break;
-			case 'supergroup':
-				if (entities?.[0].type === 'mention') {
-					const mentionOffset = entities[0].offset;
-					const mentionLength = entities[0].length + 1;
-					const revised_text = `${user}: ${text.substring(0, mentionOffset)}${text.substring(mentionOffset + mentionLength)}`;
-					messages = await aggregateMessages(chat_id, revised_text, photo);
-				} else if (text?.startsWith('/chat')) {
-					messages = await aggregateMessages(chat_id, `${user}: ${text.slice(6)}`, photo);
-				} else {
-					messages = await aggregateMessages(chat_id, `${user}: ${text}`, undefined);
-					// do not send to telegram, but continue generating response and keep as history
-					send = false;
-					modelId = COST_EFFICIENT_MODEL_ID;
-				}
+		messages = await aggregateMessages(chat_id, extractedText, extractedPhoto);
+
+		if (shouldReply) {
+			send = true;
+		} else {
+			// do not send to telegram, but continue generating response and keep as history
+			send = false;
+			modelId = COST_EFFICIENT_MODEL_ID;
 		}
 	}
 
