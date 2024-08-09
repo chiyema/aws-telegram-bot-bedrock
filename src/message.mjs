@@ -9,7 +9,7 @@ const MODEL_ID = process.env.MODEL_ID
 const COST_EFFICIENT_MODEL_ID = process.env.COST_EFFICIENT_MODEL_ID
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || 'bedrock-2023-05-31'
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '100')
-const HELP_TEXT = "The chatbot can be interacted in 3 ways. \n1. in a private chat, any message sent to the bot will be responded. \n2. in a group chat and the bot is not admin, only message that starts with /chat will be sent to the bot and responded. \n3 in a group chat and the bot is admin, every messages will be sent to the bot, but only messages that starts with /chat or @{the bot} will be respond based on the chat history";
+const HELP_TEXT = "The chatbot can be interacted in 3 ways. \n1. in a private chat, any message sent to the bot will be responded. \n2. in a group chat and the bot is not admin, only message that starts with /chat will be sent to the bot and responded. \n3 in a group chat and the bot is admin, every messages will be sent to the bot, but only messages that starts with /chat or @{the bot} will be responded based on the latest chat history";
 
 async function aggregateMessages(chat_id, text, photo) {
 	console.log('text', text);

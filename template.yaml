@@ -319,6 +319,13 @@ Resources:
   # Integration
   ##
 
+  BedrockIntegrationShouldReplyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-should-reply
+      Handler: shouldReply.handler
+      Timeout: 5
+
   BedrockIntegrationMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -390,12 +397,15 @@ Resources:
       DefinitionSubstitutions:
         EventBusName: !Ref EventBus
         EventSource: !Ref AWS::StackName
+        ShouldReplyFunctionArn: !GetAtt BedrockIntegrationShouldReplyFunction.Arn
         MessageFunctionArn: !GetAtt BedrockIntegrationMessageFunction.Arn
         CompletionFunctionArn: !GetAtt BedrockIntegrationCompletionFunction.Arn
         SummarizationFunctionArn: !GetAtt BedrockIntegrationSummarizationFunction.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - LambdaInvokePolicy:
+            FunctionName: !Ref BedrockIntegrationShouldReplyFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref BedrockIntegrationMessageFunction
         - LambdaInvokePolicy:

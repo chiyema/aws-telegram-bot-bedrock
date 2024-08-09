@@ -1,27 +1,20 @@
-StartAt: CheckForSendTyping
+StartAt: GetShouldReply
 States:
+  GetShouldReply:
+    Type: Task
+    Resource: "${ShouldReplyFunctionArn}"
+    Parameters:
+      message.$: $.detail.message
+    ResultPath: $.response
+    Next: CheckForSendTyping
+
   CheckForSendTyping:
     Type: Choice
     Choices:
-      - And:
-          - Variable: $.detail.message.chat.type
-            StringEquals: "supergroup"
-          - Not:
-              And:
-                - Variable: $.detail.message.entities
-                  IsPresent: true
-                - Variable: $.detail.message.entities[0].type
-                  StringEquals: "bot_command"
-                - Variable: $.detail.message.text
-                  StringMatches: "/chat *"
-          - Not:
-              And:
-                - Variable: $.detail.message.entities
-                  IsPresent: true
-                - Variable: $.detail.message.entities[0].type
-                  StringEquals: "mention"
-        Next: CheckForSummarization
-    Default: SendTyping
+      - Variable: $.response.shouldReply
+        BooleanEquals: true
+        Next: SendTyping
+    Default: CheckForSummarization
 
   SendTyping:
     Type: Task
