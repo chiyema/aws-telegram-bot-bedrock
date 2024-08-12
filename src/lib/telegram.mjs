@@ -1,5 +1,6 @@
 const TELEGRAM_API_ENDPOINT = process.env.TELEGRAM_API_ENDPOINT
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const TELEGRAM_BOT_ID = process.env.TELEGRAM_BOT_ID
 
 /**
  * @param {object} photo 
@@ -54,12 +55,23 @@ export async function extractContent(message) {
 
 	if (entities?.[0].type === 'mention') {
 		const mentionOffset = entities[0].offset;
-		const mentionLength = entities[0].length + 1;
-		const revisedText = `${user}: ${text.substring(0, mentionOffset)}${text.substring(mentionOffset + mentionLength)}`;
-		return {
-			extractedText: revisedText,
-			extractedPhoto: photo,
-			shouldReply: true,
+		const mentionLength = entities[0].length;
+
+		const mentionedEntity = text.substring(mentionOffset + 1, mentionLength);
+
+		if (mentionedEntity === TELEGRAM_BOT_ID) {
+			const revisedText = `${user}: ${text.substring(0, mentionOffset)}${text.substring(mentionOffset + mentionLength + 1)}`;
+			return {
+				extractedText: revisedText,
+				extractedPhoto: photo,
+				shouldReply: true,
+			}
+		} else {
+			return {
+				extractedText: `${user}: ${text}`,
+				extractedPhoto: photo,
+				shouldReply: false,
+			}
 		}
 	}
 

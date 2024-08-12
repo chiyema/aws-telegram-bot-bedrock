@@ -8,6 +8,9 @@ Parameters:
     Type: String
     Description: Telegram bot token
     NoEcho: true
+  TelegramBotId:
+    Type: String
+    Description: Telegram bot id
   TelegramIPsWhitelist:
     Type: CommaDelimitedList
     Description: Comma separate list of IPs of permitted senders commands message,
@@ -325,6 +328,9 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-should-reply
       Handler: shouldReply.handler
       Timeout: 5
+      Environment:
+        Variables:
+          TELEGRAM_BOT_ID: !Ref TelegramBotId
 
   BedrockIntegrationMessageFunction:
     Type: AWS::Serverless::Function
@@ -344,6 +350,7 @@ Resources:
           MAX_TOKENS: !Ref MaxTokens
           TELEGRAM_API_ENDPOINT: !Ref TelegramApiEndpoint
           TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+          TELEGRAM_BOT_ID: !Ref TelegramBotId
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref ChatHistoryBucket
